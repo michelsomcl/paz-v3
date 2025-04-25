@@ -2,12 +2,13 @@
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Download, FileSpreadsheet, Upload } from 'lucide-react';
+import { Download, FileSpreadsheet, Upload, List, Table } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { formatCurrency } from '@/utils/formatters';
 import { formatarDescricaoTaxa } from '@/utils/calculadora';
 import { toast } from '@/hooks/use-toast';
 import { InvestimentoComCalculo } from '@/types';
+import { useAppContext } from '@/contexts/AppContext';
 
 interface InvestimentoExportProps {
   investimentos: InvestimentoComCalculo[];
@@ -16,6 +17,7 @@ interface InvestimentoExportProps {
 
 const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, onImport }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { adicionarInvestimento, clientes } = useAppContext();
 
   const exportarExcel = () => {
     const dados = investimentos.map(inv => ({
@@ -40,6 +42,58 @@ const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, 
     XLSX.writeFile(workbook, 'investimentos.xlsx');
   };
 
+  const baixarTemplate = () => {
+    const colunas = [
+      'Cliente ID',
+      'Tipo Investimento',
+      'Modalidade',
+      'Título',
+      'Valor do Aporte',
+      'Data do Aporte',
+      'Data do Vencimento',
+      'IPCA Atual',
+      'Selic Atual',
+      'Taxa Pré Fixado',
+      'Taxa Pós CDI',
+      'Taxa IPCA'
+    ];
+
+    // Criar linha de exemplo
+    const exemplo = {
+      'Cliente ID': 'ID do cliente cadastrado no sistema',
+      'Tipo Investimento': 'CDB, LCI, LCA ou LCD',
+      'Modalidade': 'Pré Fixado, Pós Fixado ou IPCA+',
+      'Título': 'Nome do título (opcional)',
+      'Valor do Aporte': '1000',
+      'Data do Aporte': '01/01/2025',
+      'Data do Vencimento': '01/07/2025',
+      'IPCA Atual': '4.5',
+      'Selic Atual': '10.5',
+      'Taxa Pré Fixado': '12.5',
+      'Taxa Pós CDI': '105',
+      'Taxa IPCA': '6.0'
+    };
+
+    const dadosExemplo = [exemplo];
+    
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(dadosExemplo);
+    
+    // Adicionar as instruções na planilha
+    XLSX.utils.sheet_add_aoa(worksheet, [
+      ['INSTRUÇÕES PARA PREENCHIMENTO'],
+      ['1. Cliente ID deve ser um ID válido de cliente cadastrado no sistema'],
+      ['2. Tipo Investimento deve ser um dos seguintes valores: CDB, LCI, LCA, LCD'],
+      ['3. Modalidade deve ser um dos seguintes valores: Pré Fixado, Pós Fixado, IPCA+'],
+      ['4. Datas devem ser no formato DD/MM/AAAA'],
+      ['5. Valores decimais devem usar ponto (.) como separador'],
+      ['6. Preencha apenas a taxa correspondente à modalidade selecionada']
+    ], { origin: 'A20' });
+    
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
+    XLSX.writeFile(workbook, 'template_importacao.xlsx');
+  };
+
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -50,10 +104,29 @@ const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, 
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        let jsonData = XLSX.utils.sheet_to_json(worksheet);
         
+        // Verificar se há dados para importar
+        if (jsonData.length === 0) {
+          toast({
+            title: "Erro na importação",
+            description: "O arquivo não contém dados para importar.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Processar e validar os dados antes de importar
+        processarDadosImportacao(jsonData);
+        
+        // Se onImport for fornecido, chamar a função com os dados processados
         if (onImport) {
           onImport(jsonData);
+        }
+
+        // Limpar o input de arquivo para permitir importar o mesmo arquivo novamente
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
         }
       } catch (error) {
         console.error('Erro ao importar arquivo:', error);
@@ -67,15 +140,78 @@ const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, 
     reader.readAsArrayBuffer(file);
   };
 
+  const processarDadosImportacao = (dados: any[]) => {
+    let sucessos = 0;
+    let falhas = 0;
+
+    dados.forEach(item => {
+      try {
+        // Verificar cliente ID
+        const clienteId = item['Cliente ID'];
+        if (!clienteId) {
+          throw new Error("ID do cliente não informado");
+        }
+
+        // Verificar se o cliente existe
+        const clienteExiste = clientes.some(c => c.id === clienteId);
+        if (!clienteExiste) {
+          throw new Error(`Cliente com ID ${clienteId} não encontrado`);
+        }
+
+        // Mapear os campos para o formato esperado pelo adicionarInvestimento
+        const investimento = {
+          clienteId: clienteId,
+          tipoInvestimento: item['Tipo Investimento'],
+          modalidade: item['Modalidade'],
+          titulo: item['Título'],
+          valorAporte: parseFloat(item['Valor do Aporte']),
+          dataAporte: item['Data do Aporte'],
+          dataVencimento: item['Data do Vencimento'],
+          ipcaAtual: parseFloat(item['IPCA Atual']),
+          selicAtual: parseFloat(item['Selic Atual']),
+          taxaPreFixado: item['Taxa Pré Fixado'] ? parseFloat(item['Taxa Pré Fixado']) : undefined,
+          taxaPosCDI: item['Taxa Pós CDI'] ? parseFloat(item['Taxa Pós CDI']) : undefined,
+          taxaIPCA: item['Taxa IPCA'] ? parseFloat(item['Taxa IPCA']) : undefined
+        };
+
+        // Adicionar o investimento
+        adicionarInvestimento(investimento);
+        sucessos++;
+      } catch (error) {
+        console.error("Erro ao processar item:", error, item);
+        falhas++;
+      }
+    });
+
+    toast({
+      title: "Importação concluída",
+      description: `${sucessos} investimento(s) importado(s) com sucesso. ${falhas} falha(s).`,
+      variant: sucessos > 0 ? "default" : "destructive"
+    });
+  };
+
   return (
-    <div className="flex gap-2">
-      <Button 
-        className="bg-dourado hover:bg-dourado-dark"
-        onClick={exportarExcel}
-      >
-        <Download className="mr-2" size={16} />
-        Exportar Excel
-      </Button>
+    <div className="flex gap-2 flex-wrap">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            className="bg-dourado hover:bg-dourado-dark"
+          >
+            <Download className="mr-2" size={16} />
+            Exportar
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={exportarExcel}>
+            <FileSpreadsheet className="mr-2" size={16} />
+            Exportar Excel
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={baixarTemplate}>
+            <Table className="mr-2" size={16} />
+            Baixar Template
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       
       <Button 
         variant="outline"

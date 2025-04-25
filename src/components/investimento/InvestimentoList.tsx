@@ -24,31 +24,36 @@ const InvestimentoList: React.FC = () => {
   
   // Refresh data on component mount
   useEffect(() => {
-    const refreshData = async () => {
-      try {
-        setIsLoadingData(true);
-        
-        // Trigger data refresh through custom event
-        const evento = new CustomEvent("refresh-data");
-        window.dispatchEvent(evento);
-        
-        // Set a timeout to ensure we give the refresh event time to process
-        setTimeout(() => {
-          setIsLoadingData(false);
-        }, 1000);
-      } catch (error) {
-        console.error("Error refreshing investments:", error);
-        setIsLoadingData(false);
-        toast({
-          title: "Erro ao carregar dados",
-          description: "Não foi possível atualizar os investimentos",
-          variant: "destructive"
-        });
-      }
-    };
-    
     refreshData();
   }, []);
+  
+  const refreshData = async () => {
+    try {
+      setIsLoadingData(true);
+      
+      // Trigger data refresh through custom event
+      const evento = new CustomEvent("refresh-data");
+      window.dispatchEvent(evento);
+      
+      // Set a timeout to ensure we give the refresh event time to process
+      setTimeout(() => {
+        setIsLoadingData(false);
+      }, 1000);
+    } catch (error) {
+      console.error("Error refreshing investments:", error);
+      setIsLoadingData(false);
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Não foi possível atualizar os investimentos",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleImportData = (data: any[]) => {
+    // Após a importação bem-sucedida, atualize a lista
+    refreshData();
+  };
   
   const investimentosFiltrados = investimentos.filter(inv => {
     // Ensure inv is valid before filtering
@@ -107,7 +112,10 @@ const InvestimentoList: React.FC = () => {
             </CardDescription>
           </div>
           <div className={isMobile ? "mt-4 w-full" : ""}>
-            <InvestimentoExport investimentos={investimentosFiltrados} />
+            <InvestimentoExport 
+              investimentos={investimentosFiltrados} 
+              onImport={handleImportData}
+            />
           </div>
         </CardHeader>
         
