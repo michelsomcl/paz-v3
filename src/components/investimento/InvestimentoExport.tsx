@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -58,7 +57,6 @@ const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, 
       'Taxa IPCA'
     ];
 
-    // Criar linha de exemplo
     const exemplo = {
       'Cliente ID': 'ID do cliente cadastrado no sistema',
       'Tipo Investimento': 'CDB, LCI, LCA ou LCD',
@@ -79,7 +77,6 @@ const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, 
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(dadosExemplo);
     
-    // Adicionar as instruções na planilha
     XLSX.utils.sheet_add_aoa(worksheet, [
       ['INSTRUÇÕES PARA PREENCHIMENTO'],
       ['1. Cliente ID deve ser um ID válido de cliente cadastrado no sistema'],
@@ -92,6 +89,11 @@ const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, 
     
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
     XLSX.writeFile(workbook, 'template_importacao.xlsx');
+
+    toast({
+      title: "Template Baixado",
+      description: "O template de importação foi baixado com sucesso.",
+    });
   };
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,7 +108,6 @@ const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, 
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         let jsonData = XLSX.utils.sheet_to_json(worksheet);
         
-        // Verificar se há dados para importar
         if (jsonData.length === 0) {
           toast({
             title: "Erro na importação",
@@ -116,15 +117,12 @@ const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, 
           return;
         }
 
-        // Processar e validar os dados antes de importar
         processarDadosImportacao(jsonData);
         
-        // Se onImport for fornecido, chamar a função com os dados processados
         if (onImport) {
           onImport(jsonData);
         }
 
-        // Limpar o input de arquivo para permitir importar o mesmo arquivo novamente
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -146,19 +144,16 @@ const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, 
 
     dados.forEach(item => {
       try {
-        // Verificar cliente ID
         const clienteId = item['Cliente ID'];
         if (!clienteId) {
           throw new Error("ID do cliente não informado");
         }
 
-        // Verificar se o cliente existe
         const clienteExiste = clientes.some(c => c.id === clienteId);
         if (!clienteExiste) {
           throw new Error(`Cliente com ID ${clienteId} não encontrado`);
         }
 
-        // Mapear os campos para o formato esperado pelo adicionarInvestimento
         const investimento = {
           clienteId: clienteId,
           tipoInvestimento: item['Tipo Investimento'],
@@ -174,7 +169,6 @@ const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, 
           taxaIPCA: item['Taxa IPCA'] ? parseFloat(item['Taxa IPCA']) : undefined
         };
 
-        // Adicionar o investimento
         adicionarInvestimento(investimento);
         sucessos++;
       } catch (error) {
