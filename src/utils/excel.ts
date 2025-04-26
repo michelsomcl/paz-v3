@@ -10,6 +10,7 @@ export const exportarInvestimentosParaExcel = (investimentos: InvestimentoComCal
     'Cliente': inv.clienteNome,
     'Tipo': inv.tipoInvestimento,
     'Modalidade': inv.modalidade,
+    'Título': inv.titulo || '', // Add the Título column
     'Valor do Aporte': inv.valorAporte,
     'Data do Aporte': inv.dataAporte,
     'Data do Vencimento': inv.dataVencimento,
