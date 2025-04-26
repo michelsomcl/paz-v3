@@ -1,14 +1,28 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Trash2, Pencil } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
+
+interface NotesState {
+  [key: string]: string;
+}
 
 const ClienteList: React.FC = () => {
   const { clientes, excluirCliente, investimentos } = useAppContext();
+  const [notes, setNotes] = useState<NotesState>({});
+  const [openDialogId, setOpenDialogId] = useState<string | null>(null);
+
+  const handleNotesChange = (clienteId: string, value: string) => {
+    setNotes(prev => ({
+      ...prev,
+      [clienteId]: value
+    }));
+  };
 
   const calcularValoresConsolidados = (clienteId: string) => {
     const investimentosCliente = investimentos.filter(inv => inv.clienteId === clienteId);
@@ -63,7 +77,32 @@ const ClienteList: React.FC = () => {
                     <TableCell className="whitespace-nowrap">{formatCurrency(cliente.contribuicao)}</TableCell>
                     <TableCell className="whitespace-nowrap">{formatCurrency(valorAplicado)}</TableCell>
                     <TableCell className="whitespace-nowrap">{formatCurrency(patrimonioProjetado)}</TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
+                    <TableCell className="text-right space-x-2 whitespace-nowrap">
+                      <Dialog open={openDialogId === cliente.id} onOpenChange={(open) => setOpenDialogId(open ? cliente.id : null)}>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="h-8 w-8 text-blue-500 border-blue-200 hover:bg-blue-50"
+                          >
+                            <Pencil size={16} />
+                            <span className="sr-only">Anotações</span>
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Anotações - {cliente.nome}</DialogTitle>
+                          </DialogHeader>
+                          <div className="mt-4">
+                            <Textarea
+                              value={notes[cliente.id] || ''}
+                              onChange={(e) => handleNotesChange(cliente.id, e.target.value)}
+                              placeholder="Digite suas anotações aqui..."
+                              className="min-h-[200px]"
+                            />
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                       <Button 
                         variant="outline" 
                         size="icon" 
