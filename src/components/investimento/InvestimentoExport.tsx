@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -75,19 +74,14 @@ const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, 
             <FileSpreadsheet className="mr-2" size={16} />
             Exportar Excel
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={baixarTemplateExcel}>
-            <Table className="mr-2" size={16} />
-            Baixar Template
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       
-      <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+      <Button className="bg-dourado hover:bg-dourado-dark" onClick={() => fileInputRef.current?.click()}>
         <Upload className="mr-2" size={16} />
         Importar Excel
       </Button>
       
-      {/* Botão adicional para download do template */}
       <Button variant="secondary" onClick={baixarTemplateExcel}>
         <Table className="mr-2" size={16} />
         Template

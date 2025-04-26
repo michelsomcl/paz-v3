@@ -6,6 +6,7 @@ import { toast } from '@/hooks/use-toast';
 
 export const exportarInvestimentosParaExcel = (investimentos: InvestimentoComCalculo[]) => {
   const dados = investimentos.map(inv => ({
+    'ID do Cliente': inv.clienteId,
     'Cliente': inv.clienteNome,
     'Tipo': inv.tipoInvestimento,
     'Modalidade': inv.modalidade,
