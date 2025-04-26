@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +5,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
+import ClienteNotes from './ClienteNotes';
 
 const ClienteList: React.FC = () => {
   const { clientes, excluirCliente, investimentos } = useAppContext();
@@ -64,15 +64,18 @@ const ClienteList: React.FC = () => {
                     <TableCell className="whitespace-nowrap">{formatCurrency(valorAplicado)}</TableCell>
                     <TableCell className="whitespace-nowrap">{formatCurrency(patrimonioProjetado)}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-8 w-8 text-red-500 border-red-200 hover:bg-red-50"
-                        onClick={() => excluirCliente(cliente.id)}
-                      >
-                        <Trash2 size={16} />
-                        <span className="sr-only">Excluir</span>
-                      </Button>
+                      <div className="flex justify-end space-x-2">
+                        <ClienteNotes clienteNome={cliente.nome} />
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8 text-red-500 border-red-200 hover:bg-red-50"
+                          onClick={() => excluirCliente(cliente.id)}
+                        >
+                          <Trash2 size={16} />
+                          <span className="sr-only">Excluir</span>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

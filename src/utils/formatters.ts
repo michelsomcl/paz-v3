@@ -1,4 +1,3 @@
-
 // Função para formatar valores monetários
 export const formatCurrency = (value: number | undefined | null): string => {
   if (value === undefined || value === null) {
@@ -11,6 +10,13 @@ export const formatCurrency = (value: number | undefined | null): string => {
 export const currencyInputMask = (value: string): string => {
   // Remove tudo que não é dígito
   let onlyDigits = value.replace(/\D/g, '');
+  
+  // Adiciona zeros à direita se necessário para garantir 2 casas decimais
+  if (onlyDigits.length === 1) {
+    onlyDigits = '0' + onlyDigits + '00';
+  } else if (onlyDigits.length === 2) {
+    onlyDigits = onlyDigits + '00';
+  }
   
   // Converte para número e divide por 100 para obter o valor em reais
   let numberValue = parseInt(onlyDigits, 10) / 100;
@@ -28,17 +34,28 @@ export const currencyInputMask = (value: string): string => {
 
 // Máscara para campos de entrada de percentual
 export const percentageInputMask = (value: string): string => {
-  // Permitir apenas dígitos e uma vírgula
-  let cleanValue = value.replace(/[^\d,]/g, '');
+  // Remove tudo que não é dígito
+  let onlyDigits = value.replace(/\D/g, '');
   
-  // Assegurar que existe apenas uma vírgula
-  const commaCount = (cleanValue.match(/,/g) || []).length;
-  if (commaCount > 1) {
-    cleanValue = cleanValue.substring(0, cleanValue.lastIndexOf(',')) + 
-      cleanValue.substring(cleanValue.lastIndexOf(',') + 1);
+  // Adiciona zeros à direita se necessário para garantir 2 casas decimais
+  if (onlyDigits.length === 1) {
+    onlyDigits = '0' + onlyDigits + '00';
+  } else if (onlyDigits.length === 2) {
+    onlyDigits = onlyDigits + '00';
   }
   
-  return cleanValue;
+  // Converte para número com 2 casas decimais
+  const numberValue = parseInt(onlyDigits, 10) / 100;
+  
+  if (isNaN(numberValue)) {
+    return '';
+  }
+  
+  // Retorna o valor formatado com vírgula e 2 casas decimais
+  return numberValue.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
 };
 
 // Máscara para campos de data (no formato DD/MM/AA)
