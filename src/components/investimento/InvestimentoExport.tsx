@@ -87,6 +87,12 @@ const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, 
         Importar Excel
       </Button>
       
+      {/* Botão adicional para download do template */}
+      <Button variant="secondary" onClick={baixarTemplateExcel}>
+        <Table className="mr-2" size={16} />
+        Template
+      </Button>
+      
       <input
         type="file"
         ref={fileInputRef}
@@ -99,4 +105,3 @@ const InvestimentoExport: React.FC<InvestimentoExportProps> = ({ investimentos, 
 };
 
 export default InvestimentoExport;
-
